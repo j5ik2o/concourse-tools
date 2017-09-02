@@ -9,7 +9,7 @@ inputs:
 outputs:
   - name: notify-message
 run:
-  dir: tool-repo/concourse-ci
+  dir: tool-repo
   path: sh
   args:
     - tasks/rollback.sh

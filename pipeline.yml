@@ -35,7 +35,7 @@ resources:
     type: docker-image
     source:
       repository: ((application-image-repo-url))
-      insecure_registries: [ "10.0.1.101:5000" ]
+      insecure_registries: [ "docker.for.mac.localhost:5000" ]
 #      aws_access_key_id: ((aws-access-key-id))
 #      aws_secret_access_key: ((aws-secret-access-key))
 
@@ -43,7 +43,7 @@ resources:
     type: docker-image
     source:
       repository: ((application-build-cache-url))
-      insecure_registries: [ "10.0.1.101:5000" ]
+      insecure_registries: [ "docker.for.mac.localhost:5000" ]
 #      aws_access_key_id: ((aws-access-key-id))
 #      aws_secret_access_key: ((aws-secret-access-key))
 
@@ -272,18 +272,11 @@ jobs:
         resource: deploy-tools-git-repo
       - get: api-repo
         resource: application-git-repo-staging
-      - task: rollback-to-dev-kube
-        file: tool-repo/tasks/rollback-to-kube-helm.yml
+      - task: rollback
+        file: tool-repo/tasks/rollback.yml
         attempts: ((attempts))
         params:
           APP_NAME: appliation-name
-          KUBE_SERVER: ((kube-server-staging))
-          KUBE_NAMESPACE: ((kube-namespace-staging))
-          KUBE_USER: ((kube-user-staging))
-          KUBE_PASS: ((kube-pass-staging))
-          KUBE_CLUSTER_CA: ((kube-cluster-ca-staging))
-          KUBE_CLIENT_CERT: ((kube-client-cert-staging))
-          KUBE_CLIENT_KEY: ((kube-client-key-staging))
           IMAGE_REGISTRY: ((application-image-registry))
         on_success:
           put: chatwork-notification
@@ -548,13 +541,6 @@ jobs:
         attempts: ((attempts))
         params:
           APP_NAME: application-name
-          KUBE_SERVER: ((kube-server-production))
-          KUBE_NAMESPACE: ((kube-namespace-production))
-          KUBE_USER: ((kube-user-production))
-          KUBE_PASS: ((kube-pass-production))
-          KUBE_CLUSTER_CA: ((kube-cluster-ca-production))
-          KUBE_CLIENT_CERT: ((kube-client-cert-production))
-          KUBE_CLIENT_KEY: ((kube-client-key-production))
           IMAGE_REGISTRY: ((application-image-registry))
         on_success:
           put: chatwork-notification
@@ -591,18 +577,11 @@ jobs:
         resource: deploy-tools-git-repo
       - get: api-repo
         resource: application-git-repo-staging
-      - task: rollback-api-to-dev-kube
+      - task: rollback
         file: tool-repo/tasks/rollback.yml
         attempts: ((attempts))
         params:
           APP_NAME: application-name
-          KUBE_SERVER: ((kube-server-production))
-          KUBE_NAMESPACE: ((kube-namespace-production))
-          KUBE_USER: ((kube-user-production))
-          KUBE_PASS: ((kube-pass-production))
-          KUBE_CLUSTER_CA: ((kube-cluster-ca-production))
-          KUBE_CLIENT_CERT: ((kube-client-cert-production))
-          KUBE_CLIENT_KEY: ((kube-client-key-production))
           IMAGE_REGISTRY: ((application-image-registry))
         on_success:
           put: chatwork-notification
