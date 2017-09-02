@@ -8,7 +8,7 @@ inputs:
   - name: tool-repo
   - name: api-repo
   - name: version-repo
-  - name: astraea-build-cache
+  - name: application-build-cache
 outputs:
   - name: to-push
   - name: updated-version-repo
@@ -16,4 +16,4 @@ outputs:
 run:
   path: sh
   args:
-    - tool-repo/concourse-ci/tasks/production/build-docker-image.sh
+    - tool-repo/tasks/production/build-docker-image.sh
