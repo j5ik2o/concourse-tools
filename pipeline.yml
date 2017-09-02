@@ -119,8 +119,8 @@ jobs:
           GIT_EMAIL: ((git-email))
           GIT_NAME: ((git-name))
           SBT_TEST_CMD: "test"
-          SBT_BUILD_PROJECT: authorizationServer
-          SBT_TARGET_DOCKER_PATH: authorization-server/target/docker/stage
+          SBT_BUILD_PROJECT: ""
+          SBT_TARGET_DOCKER_PATH: target/docker/stage
           AWS_ACCESS_KEY_ID: ((maven-access-id))
           AWS_SECRET_ACCESS_KEY: ((maven-access-secret))
           AWS_DEFAULT_REGION: ((maven-access-region))
@@ -228,7 +228,7 @@ jobs:
         file: tool-repo/tasks/staging/deploy-to-kube-helm.yml
         attempts: ((attempts))
         params:
-          APP_NAME: application-authorization-server
+          APP_NAME: application-name
           KUBE_SERVER: ((kube-server-staging))
           KUBE_NAMESPACE: ((kube-namespace-staging))
           KUBE_USER: ((kube-user-staging))
@@ -276,7 +276,7 @@ jobs:
         file: tool-repo/tasks/rollback-to-kube-helm.yml
         attempts: ((attempts))
         params:
-          APP_NAME: application-authorization-server
+          APP_NAME: appliation-name
           KUBE_SERVER: ((kube-server-staging))
           KUBE_NAMESPACE: ((kube-namespace-staging))
           KUBE_USER: ((kube-user-staging))
@@ -374,8 +374,8 @@ jobs:
           GITHUB_PRIVATE_KEY: ((github-private-key))
           GIT_EMAIL: ((git-email))
           GIT_NAME: ((git-name))
-          SBT_BUILD_PROJECT: authorizationServer
-          SBT_TARGET_DOCKER_PATH: authorization-server/target/docker/stage
+          SBT_BUILD_PROJECT: ""
+          SBT_TARGET_DOCKER_PATH: target/docker/stage
           AWS_ACCESS_KEY_ID: ((maven-access-id))
           AWS_SECRET_ACCESS_KEY: ((maven-access-secret))
           AWS_DEFAULT_REGION: ((maven-access-region))
@@ -547,7 +547,7 @@ jobs:
         file: tool-repo/tasks/production/deploy-to-kube-helm.yml
         attempts: ((attempts))
         params:
-          APP_NAME: application-authorization-server
+          APP_NAME: application-name
           KUBE_SERVER: ((kube-server-production))
           KUBE_NAMESPACE: ((kube-namespace-production))
           KUBE_USER: ((kube-user-production))
@@ -595,7 +595,7 @@ jobs:
         file: tool-repo/tasks/rollback-to-kube-helm.yml
         attempts: ((attempts))
         params:
-          APP_NAME: application-authorization-server
+          APP_NAME: application-name
           KUBE_SERVER: ((kube-server-production))
           KUBE_NAMESPACE: ((kube-namespace-production))
           KUBE_USER: ((kube-user-production))

@@ -27,7 +27,7 @@ for CMD in ${SBT_TEST_CMD}; do
 done
 fi
 
-SBT_CMD="${SBT_BUILD_PROJECT}/docker:stage outputVersion"
+SBT_CMD="${SBT_BUILD_PROJECT}docker:stage outputVersion"
 sbt \
     -Dsbt.boot.directory=../$SBT_BOOT_DIR\
     -Dsbt.ivy.home=../$SBT_IVY_DIR \
