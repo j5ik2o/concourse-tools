@@ -12,4 +12,4 @@ run:
   dir: tool-repo/concourse-ci
   path: sh
   args:
-    - tasks/rollback-to-kube-helm.sh
+    - tasks/rollback.sh
