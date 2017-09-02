@@ -2,7 +2,7 @@
 
 set -ex
 
-source tool-repo/concourse-ci/tasks/common.sh
+source tool-repo/tasks/common.sh
 
 BUILD_CACHE_DIR=build-cache
 ROOT_FS_DIR=$BUILD_CACHE_DIR/rootfs

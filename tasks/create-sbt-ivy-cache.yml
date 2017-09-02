@@ -12,4 +12,4 @@ outputs:
 run:
   path: sh
   args:
-    - tool-repo/concourse-ci/tasks/create-sbt-ivy-cache.sh
+    - tool-repo/tasks/create-sbt-ivy-cache.sh

@@ -13,4 +13,4 @@ outputs:
 run:
   path: sh
   args:
-    - tool-repo/concourse-ci/tasks/update-sbt-ivy-cache.sh
+    - tool-repo/tasks/update-sbt-ivy-cache.sh
