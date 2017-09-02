@@ -1,0 +1,16 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: j5ik2o/scala-sbt-ubuntu
+inputs:
+  - name: tool-repo
+  - name: api-repo
+  - name: astraea-build-cache
+outputs:
+  - name: to-push
+run:
+  path: sh
+  args:
+    - tool-repo/concourse-ci/tasks/update-sbt-ivy-cache.sh

@@ -1,0 +1,16 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: j5ik2o/helm
+inputs:
+  - name: api-repo
+  - name: version-repo
+outputs:
+  - name: notify-message
+run:
+  dir: api-repo/concourse-ci
+  path: sh
+  args:
+    - tasks/production/deploy-to-kube-helm.sh

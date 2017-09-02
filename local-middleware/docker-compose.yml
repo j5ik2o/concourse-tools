@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  concourse-db:
+    image: postgres:9.5
+    environment:
+      POSTGRES_DB: concourse
+      POSTGRES_USER: concourse
+      POSTGRES_PASSWORD: concourse
+      PGDATA: /database
+
+  concourse-web:
+    image: concourse/concourse:3.3.4
+    links: [concourse-db]
+    command: web
+    depends_on: [concourse-db]
+    ports: ["8080:8080"]
+    volumes: ["./keys/web:/concourse-keys"]
+    restart: unless-stopped # required so that it retries until conocurse-db comes up
+    environment:
+      CONCOURSE_BASIC_AUTH_USERNAME: concourse
+      CONCOURSE_BASIC_AUTH_PASSWORD: concourse
+      CONCOURSE_EXTERNAL_URL: "${CONCOURSE_EXTERNAL_URL}"
+      CONCOURSE_POSTGRES_HOST: concourse-db
+      CONCOURSE_POSTGRES_USER: concourse
+      CONCOURSE_POSTGRES_PASSWORD: concourse
+      CONCOURSE_POSTGRES_DATABASE: concourse
+
+  concourse-worker:
+    image: concourse/concourse:3.3.4
+    privileged: true
+    links: [concourse-web]
+    depends_on: [concourse-web, gitbucket]
+    command: worker
+    volumes: ["./keys/worker:/concourse-keys"]
+    environment:
+      CONCOURSE_TSA_HOST: concourse-web
+
+  gitbucket:
+    image: takezoe/gitbucket
+    ports:
+      - "8081:8080"
+      - "29418:29418"
+    volumes: ["./gitbucket:/gitbucket"]

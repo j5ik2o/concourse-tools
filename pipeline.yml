@@ -1,0 +1,672 @@
+groups:
+  - name: application-staging
+    jobs:
+      - application-test-and-build-staging
+      - application-deploy-staging
+      - application-rollback-staging
+
+  - name: application-production
+    jobs:
+      - application-build-production
+      - application-deploy-production
+      - application-rollback-production
+
+  - name: application-utility
+    jobs:
+      - update-application-build-cache-staging
+      - create-application-build-cache-staging
+      - update-application-build-cache-production
+      - create-application-build-cache-production
+
+resource_types:
+  - name: chatwork-notify-resource
+    type: docker-image
+    source:
+      repository: everpeace/chatwork-notify-resource
+
+resources:
+  - name: chatwork-notification
+    type: chatwork-notify-resource
+    source:
+      api_endpoint: https://api.chatwork.com/v2
+
+  ## Docker Image
+  - name: application-image-repo
+    type: docker-image
+    source:
+      repository: ((application-image-repo-url))
+      aws_access_key_id: ((aws-access-key-id))
+      aws_secret_access_key: ((aws-secret-access-key))
+
+  - name: application-build-cache
+    type: docker-image
+    source:
+      repository: ((application-build-cache-url))
+      aws_access_key_id: ((aws-access-key-id))
+      aws_secret_access_key: ((aws-secret-access-key))
+
+  ## Git
+  - name: deploy-tools-git-repo
+    type: git
+    source:
+      uri: ((deploy-tools-git-repo-uri))
+      branch: ((deploy-tools-branch-name))
+      private_key: ((github-private-key))
+    check_every: 10s
+
+  - name: application-git-repo-staging
+    type: git
+    source:
+      uri: ((application-git-repo-uri))
+      branch: ((application-release-branch-name))
+      private_key: ((github-private-key))
+    check_every: 10s
+
+  - name: application-git-repo-staging-version
+    type: git
+    source:
+      uri: ((application-git-repo-uri))
+      branch: ((application-staging-version-branch-name))
+      private_key: ((github-private-key))
+    check_every: 10s
+
+  - name: application-git-repo-production
+    type: git
+    source:
+      uri: ((application-git-repo-uri))
+      branch: ((application-production-branch-name))
+      private_key: ((github-private-key))
+    check_every: 10s
+
+  - name: application-git-repo-production-develop
+    type: git
+    source:
+      uri: ((application-git-repo-uri))
+      branch: ((application-develop-branch-name))
+      disable_ci_skip: true
+      private_key: ((github-private-key))
+    check_every: 10s
+
+  - name: application-git-repo-production-version
+    type: git
+    source:
+      uri: ((application-git-repo-uri))
+      branch: ((application-production-version-branch-name))
+      private_key: ((github-private-key))
+    check_every: 10s
+
+jobs:
+  # Staging
+  - name: application-test-and-build-staging
+    serial: true
+    serial_groups: [ 'application-staging' ]
+    plan:
+      - aggregate:
+        - get: tool-repo
+          resource: deploy-tools-git-repo
+        - get: api-repo
+          resource: application-git-repo-staging
+        - get: version-repo
+          resource: application-git-repo-staging-version
+        - get: application-build-cache
+      - task: publish-docker-image
+        file: api-repo/concourse-ci/tasks/staging/build-docker-image.yml
+        attempts: ((attempts))
+        params:
+          GITHUB_PRIVATE_KEY: ((github-private-key))
+          GIT_EMAIL: ((git-email))
+          GIT_NAME: ((git-name))
+          SBT_TEST_CMD: "test"
+          SBT_BUILD_PROJECT: authorizationServer
+          SBT_TARGET_DOCKER_PATH: authorization-server/target/docker/stage
+          AWS_ACCESS_KEY_ID: ((maven-access-id))
+          AWS_SECRET_ACCESS_KEY: ((maven-access-secret))
+          AWS_DEFAULT_REGION: ((maven-access-region))
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-staging] Test And Build Results from Concourse (1/3)[/title]Succeeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-staging] Test And Build Results from Concourse (1/3)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+      - put: application-image-repo
+        params:
+          build: to-push
+          tag: to-push/tag
+        get_params:
+          rootfs: true
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-staging] Docker Build And Push Results from Concourse (2/3)[/title]Scceeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-staging] Docker Build And Push Results from Concourse (2/3)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+      - put: application-git-repo-staging-version
+        params:
+          repository: updated-version-repo
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-staging] Results of Version Updating from Concourse (3/3)[/title]Succeeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-staging] Results of Version Updating from Concourse (3/3)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+
+  - name: application-deploy-staging
+    serial: true
+    serial_groups: [ 'application-staging' ]
+    plan:
+      - aggregate:
+        - get: tool-repo
+          resource: deploy-tools-git-repo
+        - get: api-repo
+          resource: application-git-repo-staging
+          passed: [ application-test-and-build-staging ]
+        - get: version-repo
+          resource: application-git-repo-staging-version
+      - task: deploy-to-dev-kube
+        file: api-repo/concourse-ci/tasks/staging/deploy-to-kube-helm.yml
+        attempts: ((attempts))
+        params:
+          APP_NAME: application-authorization-server
+          KUBE_SERVER: ((kube-server-staging))
+          KUBE_NAMESPACE: ((kube-namespace-staging))
+          KUBE_USER: ((kube-user-staging))
+          KUBE_PASS: ((kube-pass-staging))
+          KUBE_CLUSTER_CA: ((kube-cluster-ca-staging))
+          KUBE_CLIENT_CERT: ((kube-client-cert-staging))
+          KUBE_CLIENT_KEY: ((kube-client-key-staging))
+          IMAGE_REGISTRY: ((application-image-registry))
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-staging] Deploy Results from Concourse (1/1)[/title]Succeeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-staging] Deploy Results from Concourse (1/1)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+
+  - name: application-rollback-staging
+    serial: true
+    serial_groups: [ 'application-staging' ]
+    plan:
+      - get: tool-repo
+        resource: deploy-tools-git-repo
+      - get: api-repo
+        resource: application-git-repo-staging
+      - task: rollback-to-dev-kube
+        file: api-repo/concourse-ci/tasks/rollback-to-kube-helm.yml
+        attempts: ((attempts))
+        params:
+          APP_NAME: application-authorization-server
+          KUBE_SERVER: ((kube-server-staging))
+          KUBE_NAMESPACE: ((kube-namespace-staging))
+          KUBE_USER: ((kube-user-staging))
+          KUBE_PASS: ((kube-pass-staging))
+          KUBE_CLUSTER_CA: ((kube-cluster-ca-staging))
+          KUBE_CLIENT_CERT: ((kube-client-cert-staging))
+          KUBE_CLIENT_KEY: ((kube-client-key-staging))
+          IMAGE_REGISTRY: ((application-image-registry))
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-staging] Rollback Results from Concourse (1/1)[/title]Succeeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-staging] Rollback Results from Concourse (1/1)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+
+  # --- sbt-ivy-cache
+  - name: update-application-build-cache-staging
+    serial: true
+    serial_groups: [ 'application-build-cache-staging' ]
+    plan:
+      - aggregate:
+        - get: tool-repo
+          resource: deploy-tools-git-repo
+        - get: api-repo
+          resource: application-git-repo-staging
+        - get: application-build-cache
+      - task: update-build-cache
+        file: api-repo/concourse-ci/tasks/update-sbt-ivy-cache.yml
+        attempts: ((attempts))
+        params:
+          AWS_ACCESS_KEY_ID: ((maven-access-id))
+          AWS_SECRET_ACCESS_KEY: ((maven-access-secret))
+          AWS_DEFAULT_REGION: ((maven-access-region))
+      - put: application-build-cache
+        params:
+          import_file: to-push/rootfs.tar
+
+  - name: create-application-build-cache-staging
+    serial: true
+    serial_groups: [ 'application-build-cache-staging' ]
+    plan:
+      - aggregate:
+        - get: tool-repo
+          resource: deploy-tools-git-repo
+        - get: api-repo
+          resource: application-git-repo-staging
+      - task: create-build-cache
+        file: api-repo/concourse-ci/tasks/create-sbt-ivy-cache.yml
+        attempts: ((attempts))
+        params:
+          AWS_ACCESS_KEY_ID: ((maven-access-id))
+          AWS_SECRET_ACCESS_KEY: ((maven-access-secret))
+          AWS_DEFAULT_REGION: ((maven-access-region))
+      - put: application-build-cache
+        params:
+          import_file: to-push/rootfs.tar
+
+  # Production
+  - name: application-build-production
+    serial: true
+    serial_groups: [ 'application-production' ]
+    plan:
+      - aggregate:
+        - get: tool-repo
+          resource: deploy-tools-git-repo
+        - get: api-repo
+          resource: application-git-repo-production
+        - get: version-repo
+          resource: application-git-repo-production-version
+        - get: application-build-cache
+      - task: publish-docker-image
+        file: api-repo/concourse-ci/tasks/production/build-docker-image.yml
+        attempts: ((attempts))
+        params:
+          GITHUB_PRIVATE_KEY: ((github-private-key))
+          GIT_EMAIL: ((git-email))
+          GIT_NAME: ((git-name))
+          SBT_BUILD_PROJECT: authorizationServer
+          SBT_TARGET_DOCKER_PATH: authorization-server/target/docker/stage
+          AWS_ACCESS_KEY_ID: ((maven-access-id))
+          AWS_SECRET_ACCESS_KEY: ((maven-access-secret))
+          AWS_DEFAULT_REGION: ((maven-access-region))
+          PRODUCTION_BRNCH: ((application-production-branch-name))
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Build Results from Concourse (1/5)[/title]Succeeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Build Results from Concourse (1/5)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+      - put: application-image-repo
+        params:
+          build: to-push
+          tag: to-push/tag
+        get_params:
+          rootfs: true
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Docker Build And Push Results from Concourse (2/5)[/title]Scceeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Docker Build And Push Results from Concourse (2/5)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+      - put: application-git-repo-production-version
+        params:
+          repository: updated-version-repo
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Results of Version Updating from Concourse (3/5)[/title]Succeeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Results of Version Updating from Concourse (3/5)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+      - task: merge-to-develop
+        file: api-repo/concourse-ci/tasks/production/merge-to-develop.yml
+        params:
+          GITHUB_PRIVATE_KEY: ((github-private-key))
+          GIT_EMAIL: ((git-email))
+          GIT_NAME: ((git-name))
+          PRODUCTION_BRNCH: ((application-production-branch-name))
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Results of Merging to Develop from Concourse (4/5)[/title]Succeeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Results of Merging to Develop from Concourse (4/5)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+      - put: application-git-repo-production-develop
+        params:
+          repository: updated-api-repo
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Results of Pushing to Develop from Concourse (5/5)[/title]Succeeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Results of Pushing to Develop from Concourse (5/5)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+
+  - name: application-deploy-production
+    serial: true
+    serial_groups: [ 'application-production' ]
+    plan:
+      - aggregate:
+        - get: tool-repo
+          resource: deploy-tools-git-repo
+        - get: api-repo
+          resource: application-git-repo-production
+          passed: [ application-build-production ]
+        - get: version-repo
+          resource: application-git-repo-production-version
+          passed: [ application-build-production ]
+      - task: deploy-to-dev-kube
+        file: api-repo/concourse-ci/tasks/production/deploy-to-kube-helm.yml
+        attempts: ((attempts))
+        params:
+          APP_NAME: application-authorization-server
+          KUBE_SERVER: ((kube-server-production))
+          KUBE_NAMESPACE: ((kube-namespace-production))
+          KUBE_USER: ((kube-user-production))
+          KUBE_PASS: ((kube-pass-production))
+          KUBE_CLUSTER_CA: ((kube-cluster-ca-production))
+          KUBE_CLIENT_CERT: ((kube-client-cert-production))
+          KUBE_CLIENT_KEY: ((kube-client-key-production))
+          IMAGE_REGISTRY: ((application-image-registry))
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Deploy Results from Concourse (1/1)[/title]Succeeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Deploy Results from Concourse (1/1)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+
+  - name: application-rollback-production
+    serial: true
+    serial_groups: [ 'application-production' ]
+    plan:
+      - get: tool-repo
+        resource: deploy-tools-git-repo
+      - get: api-repo
+        resource: application-git-repo-staging
+      - task: rollback-api-to-dev-kube
+        file: api-repo/concourse-ci/tasks/rollback-to-kube-helm.yml
+        attempts: ((attempts))
+        params:
+          APP_NAME: application-authorization-server
+          KUBE_SERVER: ((kube-server-production))
+          KUBE_NAMESPACE: ((kube-namespace-production))
+          KUBE_USER: ((kube-user-production))
+          KUBE_PASS: ((kube-pass-production))
+          KUBE_CLUSTER_CA: ((kube-cluster-ca-production))
+          KUBE_CLIENT_CERT: ((kube-client-cert-production))
+          KUBE_CLIENT_KEY: ((kube-client-key-production))
+          IMAGE_REGISTRY: ((application-image-registry))
+        on_success:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Rollback Results from Concourse (1/1)[/title]Succeeded.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+        on_failure:
+          put: chatwork-notification
+          params:
+            api_token: ((chatwork-notification-api-key))
+            room: ((chatwork-notification-room-id))
+            text_file: notify-message/text
+            text: |
+                  [info][title][application-production] Rollback Results from Concourse (1/1)[/title]Failed.
+                  build-name: $BUILD_NAME
+                  ${TEXT_FILE_CONTENT}
+                  [hr]
+                  url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+                  [/info]
+
+  # --- sbt-ivy-cache
+  - name: update-application-build-cache-production
+    serial: true
+    serial_groups: [ 'application-build-cache-production' ]
+    plan:
+      - aggregate:
+        - get: tool-repo
+          resource: deploy-tools-git-repo
+        - get: api-repo
+          resource: application-git-repo-production
+        - get: application-build-cache
+      - task: update-build-cache
+        file: api-repo/concourse-ci/tasks/update-sbt-ivy-cache.yml
+        attempts: ((attempts))
+        params:
+          AWS_ACCESS_KEY_ID: ((maven-access-id))
+          AWS_SECRET_ACCESS_KEY: ((maven-access-secret))
+          AWS_DEFAULT_REGION: ((maven-access-region))
+      - put: application-build-cache
+        params:
+          import_file: to-push/rootfs.tar
+
+  - name: create-application-build-cache-production
+    serial: true
+    serial_groups: [ 'application-build-cache-production' ]
+    plan:
+      - aggregate:
+        - get: tool-repo
+          resource: deploy-tools-git-repo
+        - get: api-repo
+          resource: application-git-repo-production
+      - task: create-build-cache
+        file: api-repo/concourse-ci/tasks/create-sbt-ivy-cache.yml
+        attempts: ((attempts))
+        params:
+          AWS_ACCESS_KEY_ID: ((maven-access-id))
+          AWS_SECRET_ACCESS_KEY: ((maven-access-secret))
+          AWS_DEFAULT_REGION: ((maven-access-region))
+      - put: application-build-cache
+        params:
+          import_file: to-push/rootfs.tar

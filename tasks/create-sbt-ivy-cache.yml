@@ -1,0 +1,15 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: j5ik2o/scala-sbt-ubuntu
+inputs:
+  - name: tool-repo
+  - name: api-repo
+outputs:
+  - name: to-push
+run:
+  path: sh
+  args:
+    - tool-repo/concourse-ci/tasks/create-sbt-ivy-cache.sh

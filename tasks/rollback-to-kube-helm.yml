@@ -1,0 +1,15 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: chatwork/helm
+inputs:
+  - name: tool-repo
+outputs:
+  - name: notify-message
+run:
+  dir: tool-repo/concourse-ci
+  path: sh
+  args:
+    - tasks/rollback-to-kube-helm.sh

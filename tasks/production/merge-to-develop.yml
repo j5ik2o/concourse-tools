@@ -1,0 +1,15 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: j5ik2o/scala-sbt-ubuntu
+inputs:
+  - name: api-repo
+outputs:
+  - name: updated-api-repo
+  - name: notify-message
+run:
+  path: sh
+  args:
+    - api-repo/concourse-ci/tasks/production/merge-to-develop.sh
