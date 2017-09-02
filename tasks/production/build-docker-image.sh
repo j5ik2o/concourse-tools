@@ -2,7 +2,7 @@
 
 set -ex
 
-source tool-repo/concourse-ci/tasks/common.sh
+source tool-repo/tasks/common.sh
 
 HOME=/root
 git_config
