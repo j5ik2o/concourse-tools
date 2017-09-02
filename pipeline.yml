@@ -35,15 +35,17 @@ resources:
     type: docker-image
     source:
       repository: ((application-image-repo-url))
-      aws_access_key_id: ((aws-access-key-id))
-      aws_secret_access_key: ((aws-secret-access-key))
+      insecure_registries: [ "10.0.1.101:5000" ]
+#      aws_access_key_id: ((aws-access-key-id))
+#      aws_secret_access_key: ((aws-secret-access-key))
 
   - name: application-build-cache
     type: docker-image
     source:
       repository: ((application-build-cache-url))
-      aws_access_key_id: ((aws-access-key-id))
-      aws_secret_access_key: ((aws-secret-access-key))
+      insecure_registries: [ "10.0.1.101:5000" ]
+#      aws_access_key_id: ((aws-access-key-id))
+#      aws_secret_access_key: ((aws-secret-access-key))
 
   ## Git
   - name: deploy-tools-git-repo

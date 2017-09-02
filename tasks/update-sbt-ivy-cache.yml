@@ -7,7 +7,7 @@ image_resource:
 inputs:
   - name: tool-repo
   - name: api-repo
-  - name: astraea-build-cache
+  - name: application-build-cache
 outputs:
   - name: to-push
 run:
