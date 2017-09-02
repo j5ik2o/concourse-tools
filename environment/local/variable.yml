@@ -1,9 +1,9 @@
 ---
 deploy-tools-git-repo-uri: ssh://git@10.0.1.101:29418/application/deploy-tools.git
 application-git-repo-uri: ssh://git@10.0.1.101:29418/application/application.git
-application-image-registry: 10.0.1.101:5000/astraea
-application-server-image-repo-url: 10.0.1.101:5000/astraea/astraea-authorization-server
-application-build-cache-url: 10.0.1.101:5000/astraea/astraea-build-cache
+application-image-registry: 10.0.1.101:5000/application
+application-image-repo-url: 10.0.1.101:5000/application/application
+application-build-cache-url: 10.0.1.101:5000/application/astraea-build-cache
 
 deploy-tools-branch-name: master
 application-staging-version-branch-name: staging-version
