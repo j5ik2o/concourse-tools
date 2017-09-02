@@ -322,7 +322,7 @@ jobs:
           resource: application-git-repo-staging
         - get: application-build-cache
       - task: update-build-cache
-        file: tool-repo/concourse-ci/tasks/update-sbt-ivy-cache.yml
+        file: tool-repo/tasks/update-sbt-ivy-cache.yml
         attempts: ((attempts))
         params:
           AWS_ACCESS_KEY_ID: ((maven-access-id))
@@ -342,7 +342,7 @@ jobs:
         - get: api-repo
           resource: application-git-repo-staging
       - task: create-build-cache
-        file: tool-repo/concourse-ci/tasks/create-sbt-ivy-cache.yml
+        file: tool-repo/tasks/create-sbt-ivy-cache.yml
         attempts: ((attempts))
         params:
           AWS_ACCESS_KEY_ID: ((maven-access-id))
@@ -641,7 +641,7 @@ jobs:
           resource: application-git-repo-production
         - get: application-build-cache
       - task: update-build-cache
-        file: tool-repo/concourse-ci/tasks/update-sbt-ivy-cache.yml
+        file: tool-repo/tasks/update-sbt-ivy-cache.yml
         attempts: ((attempts))
         params:
           AWS_ACCESS_KEY_ID: ((maven-access-id))
@@ -661,7 +661,7 @@ jobs:
         - get: api-repo
           resource: application-git-repo-production
       - task: create-build-cache
-        file: tool-repo/concourse-ci/tasks/create-sbt-ivy-cache.yml
+        file: tool-repo/tasks/create-sbt-ivy-cache.yml
         attempts: ((attempts))
         params:
           AWS_ACCESS_KEY_ID: ((maven-access-id))
