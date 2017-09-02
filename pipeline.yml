@@ -224,8 +224,8 @@ jobs:
           passed: [ application-test-and-build-staging ]
         - get: version-repo
           resource: application-git-repo-staging-version
-      - task: deploy-to-dev-kube
-        file: tool-repo/tasks/staging/deploy-to-kube-helm.yml
+      - task: deploy
+        file: tool-repo/tasks/staging/deploy.yml
         attempts: ((attempts))
         params:
           APP_NAME: application-name
@@ -543,8 +543,8 @@ jobs:
         - get: version-repo
           resource: application-git-repo-production-version
           passed: [ application-build-production ]
-      - task: deploy-to-dev-kube
-        file: tool-repo/tasks/production/deploy-to-kube-helm.yml
+      - task: deploy
+        file: tool-repo/tasks/production/deploy.yml
         attempts: ((attempts))
         params:
           APP_NAME: application-name
@@ -592,7 +592,7 @@ jobs:
       - get: api-repo
         resource: application-git-repo-staging
       - task: rollback-api-to-dev-kube
-        file: tool-repo/tasks/rollback-to-kube-helm.yml
+        file: tool-repo/tasks/rollback.yml
         attempts: ((attempts))
         params:
           APP_NAME: application-name

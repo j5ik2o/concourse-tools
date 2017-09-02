@@ -14,4 +14,4 @@ run:
   dir: tool-repo
   path: sh
   args:
-    - tasks/production/deploy-to-kube-helm.sh
+    - tasks/production/deploy.sh
