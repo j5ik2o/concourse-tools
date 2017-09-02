@@ -14,8 +14,6 @@ if [ ! -e $BUILD_CACHE_DIR ]; then
   mkdir -p $SBT_IVY_DIR
 fi
 
-mv $WIX_MYSQL_DIR $HOME/
-
 cd api-repo
 
 sbt \
