@@ -229,13 +229,6 @@ jobs:
         attempts: ((attempts))
         params:
           APP_NAME: application-name
-          KUBE_SERVER: ((kube-server-staging))
-          KUBE_NAMESPACE: ((kube-namespace-staging))
-          KUBE_USER: ((kube-user-staging))
-          KUBE_PASS: ((kube-pass-staging))
-          KUBE_CLUSTER_CA: ((kube-cluster-ca-staging))
-          KUBE_CLIENT_CERT: ((kube-client-cert-staging))
-          KUBE_CLIENT_KEY: ((kube-client-key-staging))
           IMAGE_REGISTRY: ((application-image-registry))
         on_success:
           put: chatwork-notification
