@@ -112,7 +112,7 @@ jobs:
           resource: application-git-repo-staging-version
         - get: application-build-cache
       - task: publish-docker-image
-        file: api-repo/concourse-ci/tasks/staging/build-docker-image.yml
+        file: tool-repo/tasks/staging/build-docker-image.yml
         attempts: ((attempts))
         params:
           GITHUB_PRIVATE_KEY: ((github-private-key))
@@ -225,7 +225,7 @@ jobs:
         - get: version-repo
           resource: application-git-repo-staging-version
       - task: deploy-to-dev-kube
-        file: api-repo/concourse-ci/tasks/staging/deploy-to-kube-helm.yml
+        file: tool-repo/tasks/staging/deploy-to-kube-helm.yml
         attempts: ((attempts))
         params:
           APP_NAME: application-authorization-server
@@ -273,7 +273,7 @@ jobs:
       - get: api-repo
         resource: application-git-repo-staging
       - task: rollback-to-dev-kube
-        file: api-repo/concourse-ci/tasks/rollback-to-kube-helm.yml
+        file: tool-repo/tasks/rollback-to-kube-helm.yml
         attempts: ((attempts))
         params:
           APP_NAME: application-authorization-server
@@ -368,7 +368,7 @@ jobs:
           resource: application-git-repo-production-version
         - get: application-build-cache
       - task: publish-docker-image
-        file: api-repo/concourse-ci/tasks/production/build-docker-image.yml
+        file: tool-repo/tasks/production/build-docker-image.yml
         attempts: ((attempts))
         params:
           GITHUB_PRIVATE_KEY: ((github-private-key))
@@ -468,7 +468,7 @@ jobs:
                   url: $CONCOURSE_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
                   [/info]
       - task: merge-to-develop
-        file: api-repo/concourse-ci/tasks/production/merge-to-develop.yml
+        file: tool-repo/tasks/production/merge-to-develop.yml
         params:
           GITHUB_PRIVATE_KEY: ((github-private-key))
           GIT_EMAIL: ((git-email))
@@ -544,7 +544,7 @@ jobs:
           resource: application-git-repo-production-version
           passed: [ application-build-production ]
       - task: deploy-to-dev-kube
-        file: api-repo/concourse-ci/tasks/production/deploy-to-kube-helm.yml
+        file: tool-repo/tasks/production/deploy-to-kube-helm.yml
         attempts: ((attempts))
         params:
           APP_NAME: application-authorization-server
@@ -592,7 +592,7 @@ jobs:
       - get: api-repo
         resource: application-git-repo-staging
       - task: rollback-api-to-dev-kube
-        file: api-repo/concourse-ci/tasks/rollback-to-kube-helm.yml
+        file: tool-repo/tasks/rollback-to-kube-helm.yml
         attempts: ((attempts))
         params:
           APP_NAME: application-authorization-server
