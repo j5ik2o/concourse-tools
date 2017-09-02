@@ -5,12 +5,13 @@ image_resource:
   source:
     repository: j5ik2o/helm
 inputs:
+  - name: tool-repo
   - name: api-repo
   - name: version-repo
 outputs:
   - name: notify-message
 run:
-  dir: api-repo/concourse-ci
+  dir: tool-repo
   path: sh
   args:
     - tasks/staging/deploy-to-kube-helm.sh

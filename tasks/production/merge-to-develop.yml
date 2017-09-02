@@ -5,6 +5,7 @@ image_resource:
   source:
     repository: j5ik2o/scala-sbt-ubuntu
 inputs:
+  - name: tool-repo
   - name: api-repo
 outputs:
   - name: updated-api-repo
@@ -12,4 +13,4 @@ outputs:
 run:
   path: sh
   args:
-    - api-repo/concourse-ci/tasks/production/merge-to-develop.sh
+    - tool-repo/tasks/production/merge-to-develop.sh

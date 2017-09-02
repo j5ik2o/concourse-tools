@@ -18,3 +18,4 @@ credential.yml
 fly
 
 gitbucket/
+docker-registry/
