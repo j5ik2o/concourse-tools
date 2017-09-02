@@ -4,7 +4,7 @@ set -ex
 
 source tool-repo/tasks/common.sh
 
-BUILD_CACHE_DIR=astraea-build-cache
+BUILD_CACHE_DIR=application-build-cache
 ROOT_FS_DIR=$BUILD_CACHE_DIR/rootfs
 SBT_BOOT_DIR=$ROOT_FS_DIR/opt/sbt-boot
 SBT_IVY_DIR=$ROOT_FS_DIR/opt/sbt-ivy
