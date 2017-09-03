@@ -30,7 +30,7 @@ services:
     image: concourse/concourse:3.3.4
     privileged: true
     links: [concourse-web]
-    depends_on: [concourse-web, gitbucket]
+    depends_on: [concourse-web, gitbucket, docker-registry]
     command: worker
     volumes: ["./keys/worker:/concourse-keys"]
     environment:
@@ -42,3 +42,10 @@ services:
       - "8081:8080"
       - "29418:29418"
     volumes: ["./gitbucket:/gitbucket"]
+    
+  docker-registry:
+    image: registry:2.6
+    ports:
+      - "5000:5000"
+      - "29418:29418"
+    volumes: ["./docker-registry:/var/lib/registry"]
