@@ -47,5 +47,13 @@ services:
     image: registry:2.6
     ports:
       - "5000:5000"
-      - "29418:29418"
     volumes: ["./docker-registry:/var/lib/registry"]
+  
+  docker-registry-web:
+    image: hyper/docker-registry-web
+    ports:
+      - "8082:8080"
+    links:
+      - docker-registry
+    environment:
+      REGISTRY_HOST: registry
