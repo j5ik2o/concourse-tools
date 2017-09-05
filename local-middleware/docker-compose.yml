@@ -43,7 +43,6 @@ services:
       - "29418:29418"
     volumes: ["./gitbucket:/gitbucket"]
 
-
   docker-registry-web:
     image: hyper/docker-registry-web
     ports:
