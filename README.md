@@ -10,7 +10,7 @@
 
  - gitbucket(DBはH2)
  - docker-registry
- - docker-registery-web
+ - docker-registry-web
  - concourse(web, worker, postgres)
 
 ### 準備
