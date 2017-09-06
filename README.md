@@ -65,6 +65,7 @@ local-middleware $ docker-compose up
 #### concourse
 
 - `environment/local/credential.yml`を作成する
+
 ```
 ---
 attempts: 1 # ジョブが失敗した時のリトライ回数(1はリトライなし)
@@ -85,6 +86,7 @@ git-name: j5ik2o
 aws-access-key-id: ...
 aws-secret-access-key: ...
 ```
+
 - http://localhost:8080/ にアクセスする。
 - Appleのアイコンをクリックして、flyをdeployディレクトリ直下にコピーする。
 - concourseへログインする
@@ -111,11 +113,11 @@ aws-secret-access-key: ...
 
 ### sbtプロジェクトの前提条件
 
-- `project/plugins.sbt`にbt-native-packagerとsbt-releaseを追加する
+- `project/plugins.sbt`にsbt-native-packagerとsbt-releaseを追加する
 - docker buildできるように設定する
 - `sbt release`のプロセスを設定する
 
-**project/plugins.sbt
+**project/plugins.sbt**
 
 ```scala
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.0")
