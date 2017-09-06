@@ -104,6 +104,11 @@ aws-secret-access-key: ...
   - stagingは本番リリースで行うバージョンのバンプ、`git tag`などは行いません。何度実行しても同じバージョンとしてテスト・ビルドします。
   - 本番の場合は、sbt release `with-defaults`が実行されます。
 
+### docker-registry
+
+- docker-registryのポート番号は5000
+- docker-registry-webのポート番号は8082. http://localhost:8082
+
 ### sbtプロジェクトの前提条件
 
 - `project/plugins.sbt`にbt-native-packagerとsbt-releaseを追加する
